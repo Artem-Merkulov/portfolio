@@ -1,0 +1,59 @@
+# docker pull postgres:17-alpine
+# docker run -d --rm --name psgr -v postgres-data:/var/lib/postgresql/data --network dbnet -e POSTGRES_DB=mydata -e POSTGRES_USER=a_merkulov -e POSTGRES_PASSWORD=1234 postgres:17-alpine
+# docker exec -it psqr psql -U a_merkulov -d mydata
+# \q - выход из коммандной строки psql
+# docker pull adminer
+# docker run --name adminer --rm -d --network dbnet --link psgr:db -p 8080:8080 adminer
+
+# docker-compose.yml - example
+```
+services:
+    sitewomen:
+        build: ./sitewomen
+        image: sitewomen
+        container_name: sitewomen
+        restart: always
+        command: "python manage.py runserver 0.0.0.0:8000"
+        env_file:
+            - .env
+        links:
+            - "postgres:dbps"
+        networks:
+            - dbnet
+        volumes:
+            - ./sitewomen:/app/www/sitewomen
+        ports:
+            - "8000:8000"
+        depends_on:
+            - postgres
+```
+
+# import of enviroment variables from .env env_file in python script:
+
+import os
+from os import environ
+
+SECRET_KEY = environ.get("SECRET_KEY") # SECRET_KEY=1234
+ALLOWED_HOSTS = environ.get("ALLOWED_HOSTS").split(" ") # ['127.0.0.1', 'localhost', 'sitewomen'] # ALLOWED_HOSTS=127.0.0.1 localhost [::1]
+
+# "[::1]" - адрес loopback для IPv6, эквивалент "127.0.0.1" для IPv4.
+
+# docker-compose.yml для nginx.
+
+```
+services:
+    nginx: 
+        image: nginx:latest
+        container_name: nginx-server
+        restart: always # контейнер будет всегда пытаться запуститься, в случае остановки.
+        networks: 
+            - dbnet
+        expose:
+            - 8088
+        ports:
+            - "80:8088"
+        volumes:
+            - ./sitewomen/static:/app/www/sitewomen/static
+        depends_on:
+            - sitewomen
+```

@@ -1,0 +1,67 @@
+
+# docker run -d --rm --name psgr -v postgres-data:/var/lib/postgresql/data 
+# --network dbnet -e POSTGRES_DB=mydata -e POSTGRES_USER=a_merkulov 
+# -e POSTGRES_PASSWORD=1234 postgres:17-alpine
+
+version: "3.9" # Specify the Compose file version
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: psgr
+    ports: 
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER} # a_merkulov
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # 1234
+      - POSTGRES_DB=${POSTGRES_DB} # mydata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dbnet
+    restart: unless-stopped
+
+# docker run --name adminer --rm -d --network dbnet --link psgr:db -p 8080:8080 adminer
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "127.0.0.1:8080:8080"
+    links:
+      - postgres:db
+    networks:
+      - dbnet
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+# docker run --name flask-container --rm --network dbnet 
+# --link psgr:dbps -p 127.0.0.1:8008:4000 -v ${PWD}/src:/app flask-back
+
+  webflask:
+    build:
+      context: ./flaskprj
+      dockerfile: Dockerfile
+    image: flask-back
+    container_name: flsite
+    ports:
+      - "127.0.0.1:8008:4000"
+    links:
+      - postgres:dbps
+    networks:
+      - dbnet
+    depends_on:
+      - postgres
+    volumes:
+      - ./flaskprj:/app
+    restart: unless-stopped
+
+networks:
+  dbnet:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+
+# docker compose up -d
