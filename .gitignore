@@ -1,0 +1,19 @@
+# Переменные окружения
+.env
+!.env.example
+
+# IDE и ОС
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Данные и артефакты
+*.log
+.venv/
+venv/
